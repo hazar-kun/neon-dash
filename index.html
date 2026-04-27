@@ -1,170 +1,116 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Click Counter</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
-      min-height: 100vh;
-      background: radial-gradient(circle at center, #0a0a0a 0%, #000 100%);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 44px;
-      font-family: 'Segoe UI', sans-serif;
-      user-select: none;
-      overflow: hidden;
-    }
-
-    .counter {
-      font-size: 96px;
-      font-weight: 800;
-      color: #00ff88;
-      text-shadow: 0 0 30px rgba(0,255,136,0.5);
-      font-family: monospace;
-      min-width: 160px;
-      text-align: center;
-      transition: transform 0.08s ease;
-    }
-    .counter.bump { transform: scale(1.13); }
-
-    .click-btn {
-      width: 190px;
-      height: 190px;
-      border-radius: 50%;
-      background: linear-gradient(145deg, #00ff88, #00cc6a);
-      border: none;
-      cursor: pointer;
-      color: #000;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      position: relative;
-      overflow: visible;
-      box-shadow: 0 0 55px rgba(0,255,136,0.35), 0 8px 25px rgba(0,0,0,0.5);
-      transition: transform 0.08s ease, box-shadow 0.15s ease;
-      outline: none;
-    }
-    .click-btn:hover {
-      box-shadow: 0 0 75px rgba(0,255,136,0.55), 0 10px 30px rgba(0,0,0,0.6);
-    }
-    .click-btn:active { transform: scale(0.91); }
-
-    .click-btn svg { pointer-events: none; }
-
-    .bubble {
-      position: absolute;
-      border-radius: 50%;
-      background: radial-gradient(circle at 30% 30%,
-        rgba(255,255,255,0.9),
-        rgba(0,255,136,0.6) 50%,
-        rgba(0,200,100,0.2)
-      );
-      pointer-events: none;
-      transform: translate(-50%, -50%);
-    }
-
-    .reset-btn {
-      display: flex;
-      align-items: center;
-      gap: 9px;
-      padding: 13px 34px;
-      background: linear-gradient(145deg, #00ff88, #00cc6a);
-      border: none;
-      border-radius: 10px;
-      color: #000;
-      font-size: 16px;
-      font-weight: 700;
-      cursor: pointer;
-      box-shadow: 0 0 30px rgba(0,255,136,0.3), 0 6px 20px rgba(0,0,0,0.4);
-      transition: all 0.15s ease;
-      outline: none;
-      font-family: inherit;
-    }
-    .reset-btn:hover {
-      box-shadow: 0 0 50px rgba(0,255,136,0.5), 0 8px 25px rgba(0,0,0,0.5);
-      transform: translateY(-2px);
-    }
-    .reset-btn:active { transform: scale(0.96); }
-
-    @media (max-width: 480px) {
-      .counter { font-size: 72px; }
-      .click-btn { width: 155px; height: 155px; }
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Neon Dash</title>
+<style>
+  :root { --neon: #00f0ff; --bg: #000; --brightness: 1; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 100%; height: 100%; background: var(--bg); overflow: hidden; font-family: 'Courier New', monospace; color: #fff; user-select: none; -webkit-tap-highlight-color: transparent; }
+  #wrap { position: relative; width: 100vw; height: 100vh; filter: brightness(var(--brightness)); transition: filter 0.2s; }
+  canvas { display: block; width: 100%; height: 100%; background: #000; }
+  .hud { position: absolute; top: 18px; padding: 10px 18px; border: 2px solid var(--neon); border-radius: 8px; background: rgba(0,0,0,0.55); color: var(--neon); text-shadow: 0 0 4px var(--neon), 0 0 10px var(--neon); box-shadow: 0 0 8px var(--neon); font-weight: bold; letter-spacing: 2px; }
+  #score { left: 18px; font-size: 22px; }
+  #score .val { font-size: 28px; }
+  #settingsBtn { right: 18px; cursor: pointer; width: 52px; height: 52px; display: flex; align-items: center; justify-content: center; }
+  #settingsPanel { position: absolute; top: 82px; right: 18px; width: 280px; padding: 20px; border: 2px solid var(--neon); border-radius: 12px; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); display: none; z-index: 10; }
+  #settingsPanel.open { display: block; }
+  .setting { margin-bottom: 16px; }
+  .setting label { display: block; font-size: 11px; color: var(--neon); margin-bottom: 6px; }
+  .diff-buttons { display: flex; gap: 6px; }
+  .diff-buttons button { flex: 1; padding: 8px 0; background: transparent; color: var(--neon); border: 1px solid var(--neon); border-radius: 6px; cursor: pointer; }
+  .diff-buttons button.active { background: var(--neon); color: #000; }
+  .overlay { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; background: rgba(0,0,0,0.65); z-index: 5; backdrop-filter: blur(4px); }
+  .overlay.hidden { display: none; }
+  .overlay h1 { font-size: 64px; color: var(--neon); text-shadow: 0 0 20px var(--neon); margin-bottom: 18px; }
+  .overlay button { background: transparent; color: var(--neon); border: 2px solid var(--neon); padding: 14px 40px; font-size: 16px; cursor: pointer; border-radius: 8px; }
+</style>
 </head>
 <body>
+<div id="wrap">
+  <canvas id="game"></canvas>
+  <div id="score" class="hud">SCORE: <span id="scoreVal">0</span></div>
+  <button id="settingsBtn" class="hud">⚙️</button>
+  <div id="settingsPanel">
+    <h3>SETTINGS</h3>
+    <div class="setting">
+      <label>BRIGHTNESS <span id="brightVal">100%</span></label>
+      <input type="range" id="brightness" min="30" max="150" value="100">
+    </div>
+    <div class="setting">
+      <label>DIFFICULTY</label>
+      <div class="diff-buttons">
+        <button data-diff="easy">EASY</button>
+        <button data-diff="normal" class="active">NORMAL</button>
+        <button data-diff="hard">HARD</button>
+      </div>
+    </div>
+  </div>
+  <div id="startScreen" class="overlay">
+    <h1>NEON DASH</h1>
+    <p>SPACE / TAP TO JUMP</p>
+    <button id="startBtn">START</button>
+  </div>
+  <div id="gameOverScreen" class="overlay hidden">
+    <h1>GAME OVER</h1>
+    <p>SCORE: <span id="finalScore">0</span></p>
+    <button id="restartBtn">RETRY</button>
+  </div>
+</div>
+<script>
+(() => {
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  let W, H, GROUND_Y;
+  function resize() {
+    W = window.innerWidth; H = window.innerHeight;
+    canvas.width = W; canvas.height = H;
+    GROUND_Y = H - 100;
+  }
+  window.addEventListener('resize', resize); resize();
 
-  <div class="counter" id="counter">0</div>
+  const NEON_COLORS = ['#00f0ff', '#ff00d4', '#39ff14', '#bf00ff'];
+  let currentColor = NEON_COLORS[0];
+  const player = { x: 50, y: 0, size: 40, vy: 0, onGround: false, rot: 0 };
+  let obstacles = []; let score = 0; let running = false;
+  const cfg = { speed: 7, gravity: 0.8, jump: 15 };
 
-  <button class="click-btn" id="clickBtn" aria-label="Tıkla">
-    <svg width="68" height="68" viewBox="0 0 24 24" fill="none"
-         stroke="currentColor" stroke-width="2.5"
-         stroke-linecap="round" stroke-linejoin="round">
-      <path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4
-               M9 3v18m0 0h10a2 2 0 0 0 2-2V9
-               M9 21H5a2 2 0 0 1-2-2V9m0 0h18"/>
-    </svg>
-  </button>
+  function reset() {
+    player.y = GROUND_Y - player.size; player.vy = 0;
+    obstacles = []; score = 0; running = true;
+    document.getElementById('scoreVal').textContent = '0';
+  }
 
-  <button class="reset-btn" id="resetBtn">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-         stroke="currentColor" stroke-width="2.5"
-         stroke-linecap="round" stroke-linejoin="round">
-      <polyline points="1 4 1 10 7 10"/>
-      <path d="M3.51 15a9 9 0 1 0 .49-3.44"/>
-    </svg>
-    Reset
-  </button>
+  function jump() { if (player.onGround) { player.vy = -cfg.jump; player.onGround = false; } }
 
-  <script>
-    let count = 0;
-    const counterEl = document.getElementById('counter');
-    const clickBtn  = document.getElementById('clickBtn');
-    const resetBtn  = document.getElementById('resetBtn');
-
-    function spawnBubbles(e) {
-      const rect = clickBtn.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-
-      for (let i = 0; i < 8; i++) {
-        const b = document.createElement('span');
-        b.className = 'bubble';
-        const angle = (Math.PI * 2 * i) / 8 + Math.random() * 0.5;
-        const dist  = 55 + Math.random() * 55;
-        const size  = 8  + Math.random() * 12;
-        b.style.cssText = `left:${x}px;top:${y}px;width:${size}px;height:${size}px`;
-        clickBtn.appendChild(b);
-        const tx = Math.cos(angle) * dist;
-        const ty = Math.sin(angle) * dist;
-        b.animate([
-          { transform: `translate(-50%,-50%) scale(0.3)`, opacity: 1 },
-          { transform: `translate(calc(-50% + ${tx}px), calc(-50% + ${ty}px)) scale(1.2)`, opacity: 0 }
-        ], { duration: 800, easing: 'cubic-bezier(0.2,0.6,0.3,1)', fill: 'forwards' })
-        .onfinish = () => b.remove();
-      }
-    }
-
-    clickBtn.addEventListener('click', e => {
-      count++;
-      counterEl.textContent = count;
-      counterEl.classList.remove('bump');
-      void counterEl.offsetWidth;
-      counterEl.classList.add('bump');
-      setTimeout(() => counterEl.classList.remove('bump'), 120);
-      spawnBubbles(e);
+  function update() {
+    if (!running) return;
+    player.vy += cfg.gravity; player.y += player.vy;
+    if (player.y + player.size >= GROUND_Y) { player.y = GROUND_Y - player.size; player.vy = 0; player.onGround = true; }
+    if (Math.random() < 0.02) { obstacles.push({ x: W, y: GROUND_Y - 40, w: 30, h: 40 }); }
+    obstacles.forEach((o, i) => {
+      o.x -= cfg.speed;
+      if (o.x < player.x + player.size && o.x + o.w > player.x && o.y < player.y + player.size) { running = false; document.getElementById('gameOverScreen').classList.remove('hidden'); }
+      if (o.x + o.w < 0) { obstacles.splice(i, 1); score++; document.getElementById('scoreVal').textContent = score; }
     });
+  }
 
-    resetBtn.addEventListener('click', () => {
-      count = 0;
-      counterEl.textContent = '0';
-    });
-  </script>
+  function draw() {
+    ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
+    ctx.strokeStyle = currentColor; ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.moveTo(0, GROUND_Y); ctx.lineTo(W, GROUND_Y); ctx.stroke();
+    ctx.fillStyle = currentColor; ctx.fillRect(player.x, player.y, player.size, player.size);
+    obstacles.forEach(o => { ctx.fillStyle = '#ff3860'; ctx.fillRect(o.x, o.y, o.w, o.h); });
+  }
 
+  function loop() { update(); draw(); requestAnimationFrame(loop); }
+  loop();
+
+  window.addEventListener('keydown', (e) => { if(e.code === 'Space') jump(); });
+  document.getElementById('startBtn').onclick = () => { reset(); document.getElementById('startScreen').classList.add('hidden'); };
+  document.getElementById('restartBtn').onclick = () => { reset(); document.getElementById('gameOverScreen').classList.add('hidden'); };
+})();
+</script>
 </body>
 </html>
